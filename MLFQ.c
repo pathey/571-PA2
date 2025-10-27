@@ -105,38 +105,83 @@ int main(int argc, char const *argv[])
 		- For the assignment purposes, you have to replace this part with the other scheduling methods 
 		to be implemented.
 	************************************************************************************************/
+	struct Process {
+		pid_t pid;
+		int quantum;
+		int queue;
+		int semaphore;
+		time_t start;
+		time_t end;
+	};
 
-	running1 = 1;
-	running2 = 1;
-	running3 = 1;
-	running4 = 1;
+	struct Process procs[4] = {
+		{pid1, QUANTUM1, 1, 1, 0, 0},
+		{pid2, QUANTUM1, 1, 1, 0, 0},
+		{pid3, QUANTUM1, 1, 1, 0, 0},
+		{pid4, QUANTUM1, 1, 1, 0, 0}
+	};
+	
+	int queue1 = 4;
+	int queue2 = 0;
 
-	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
+	for(int i = 0; i < 4; i++){
+		procs[i].start = clock();
+	}
+	
+
+	while (procs[0].semaphore > 0 || procs[1].semaphore > 0 || procs[2].semaphore > 0 || procs[3].semaphore > 0)
 	{
-		if (running1 > 0){
-			kill(pid1, SIGCONT);
-			usleep(QUANTUM1);
-			kill(pid1, SIGSTOP);
+		while (queue1 > 0){
+			if (procs[0].semaphore > 0){
+				kill(pid1, SIGCONT);
+				usleep(QUANTUM1);
+				kill(pid1, SIGSTOP);	
+			}
+			if (procs[1].semaphore > 0){
+				kill(pid2, SIGCONT);
+				usleep(QUANTUM2);
+				kill(pid2, SIGSTOP);
+			}
+			if (procs[2].semaphore > 0){
+				kill(pid3, SIGCONT);
+				usleep(QUANTUM3);
+				kill(pid3, SIGSTOP);
+			}
+			if (procs[3].semaphore > 0){
+				kill(pid4, SIGCONT);
+				usleep(QUANTUM4);
+				kill(pid4, SIGSTOP);
+			}
+			waitpid(pid1, &procs[0].semaphore, WNOHANG);
+			waitpid(pid2, &procs[1].semaphore, WNOHANG);
+			waitpid(pid3, &procs[2].semaphore, WNOHANG);
+			waitpid(pid4, &procs[3].semaphore, WNOHANG);
+			for(int i  = 0; i < 4; i++){
+				queue1--;
+				if(procs[i].semaphore == 0){
+					procs[i].end = clock();
+				}
+				else{
+					procs[i].queue = 2;
+					queue2++;
+				}
+			}
 		}
-		if (running2 > 0){
-			kill(pid2, SIGCONT);
-			usleep(QUANTUM2);
-			kill(pid2, SIGSTOP);
-		}
-		if (running3 > 0){
-			kill(pid3, SIGCONT);
-			usleep(QUANTUM3);
-			kill(pid3, SIGSTOP);
-		}
-		if (running4 > 0){
-			kill(pid4, SIGCONT);
-			usleep(QUANTUM4);
-			kill(pid4, SIGSTOP);
-		}
-		waitpid(pid1, &running1, WNOHANG);
-		waitpid(pid2, &running2, WNOHANG);
-		waitpid(pid3, &running3, WNOHANG);
-		waitpid(pid4, &running4, WNOHANG);
+		while(queue2 > 0){
+			for(int i = 0; i < 4; i++){
+				if (procs[i].semaphore == 1){
+					kill(procs[i].pid, SIGCONT);
+					waitpid(procs[i].pid, &procs[i].semaphore, 0);
+					procs[i].end = clock();
+					queue2--;
+				}
+			}
+		}			
+	}
+
+	for(int i = 0; i < 4; i++){
+		double elapsed = (double)(procs[i].end - procs[i].start) / (double)(CLOCKS_PER_SEC);
+		printf("%.6f\n", elapsed);
 	}
 
 	/************************************************************************************************
