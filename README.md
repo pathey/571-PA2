@@ -6,5 +6,6 @@ To compile all programs run "make all". Warnings are intended to be suppressed, 
 
 You can also run "make clean" to clear executables.
 
-To run a given file type "run\_\[PROGRAM NAME\]" but replace PROGRAM NAME with the name of the program excluding the ".c" suffix.
+To run a given file type "make run\_\[PROGRAM NAME\]" but replace PROGRAM NAME with the name of the program excluding the ".c" suffix.
 
+We also built the ability to quickly compute the average response time by running "make avg\-\[PROGRAM NAME\]" once again replacing PROGRAM NAME with the appropriate name without ".c"

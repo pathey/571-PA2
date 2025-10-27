@@ -103,24 +103,26 @@ int main(int argc, char const *argv[])
 		- Scheduling code starts here
 	************************************************************************************************/
 
-
 	struct Process {
 		pid_t  pid;
 		int workload;
 		int semaphore;
-		time_t start;
-		time_t end;
 	};
 
 	struct Process procs[4] = {
-		{pid1, WORKLOAD1, 1, 0, 0},
-		{pid2, WORKLOAD2, 1, 0, 0},
-		{pid3, WORKLOAD3, 1, 0, 0},
-		{pid4, WORKLOAD4, 1, 0, 0}
+		{pid1, WORKLOAD1, 1},
+		{pid2, WORKLOAD2, 1},
+		{pid3, WORKLOAD3, 1},
+		{pid4, WORKLOAD4, 1}
 	};
-	
+
+	struct timespec start [4];
+	struct timespec end [4];
+
+	struct timespec t0;
+	clock_gettime(CLOCK_MONOTONIC, &t0);	
 	for(int i = 0; i < 4; i++){
-		procs[i].start = clock();
+		start[i] = t0;
 	}	
 	
 	for(int i = 1; i < 4;  i++){
@@ -137,12 +139,12 @@ int main(int argc, char const *argv[])
 	{
 		kill(procs[i].pid, SIGCONT);
 		waitpid(procs[i].pid, &procs[i].semaphore, 0);
-		procs[i].end = clock();
+		clock_gettime(CLOCK_MONOTONIC, &end[i]);
 	}
 
 	for(int i = 0; i < 4; i++){
-		double elapsed = (double)(procs[i].end - procs[i].start) / (double)(CLOCKS_PER_SEC);
-		printf("%.6f\n", elapsed);
+		double elapsed = (double)(end[i].tv_sec - start[i].tv_sec) + (double)(end[i].tv_nsec - start[i].tv_nsec) / 1e9;
+		printf("%.20f\n", elapsed);
 	}
 
 

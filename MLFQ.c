@@ -105,27 +105,37 @@ int main(int argc, char const *argv[])
 		- For the assignment purposes, you have to replace this part with the other scheduling methods 
 		to be implemented.
 	************************************************************************************************/
+	int quantum [4] = {1000, 1000, 1000, 1000};
+
+	if (argc >= 2) quantum[0] = atoi(argv[1]);
+	if (argc >= 3) quantum[1] = atoi(argv[2]);
+	if (argc >= 4) quantum[2] = atoi(argv[3]);
+	if (argc >= 5) quantum[3] = atoi(argv[4]);
+
 	struct Process {
 		pid_t pid;
 		int quantum;
 		int queue;
 		int semaphore;
-		time_t start;
-		time_t end;
 	};
 
 	struct Process procs[4] = {
-		{pid1, QUANTUM1, 1, 1, 0, 0},
-		{pid2, QUANTUM1, 1, 1, 0, 0},
-		{pid3, QUANTUM1, 1, 1, 0, 0},
-		{pid4, QUANTUM1, 1, 1, 0, 0}
+		{pid1, quantum[0], 1, 1},
+		{pid2, quantum[1], 1, 1},
+		{pid3, quantum[2], 1, 1},
+		{pid4, quantum[3], 1, 1}
 	};
 	
 	int queue1 = 4;
 	int queue2 = 0;
 
+	struct timespec start [4];
+	struct timespec end [4];
+	
+	struct timespec t0;
+	clock_gettime(CLOCK_MONOTONIC, &t0);
 	for(int i = 0; i < 4; i++){
-		procs[i].start = clock();
+		start[i] = t0;
 	}
 	
 
@@ -134,22 +144,22 @@ int main(int argc, char const *argv[])
 		while (queue1 > 0){
 			if (procs[0].semaphore > 0){
 				kill(pid1, SIGCONT);
-				usleep(QUANTUM1);
+				usleep(quantum[0]);
 				kill(pid1, SIGSTOP);	
 			}
 			if (procs[1].semaphore > 0){
 				kill(pid2, SIGCONT);
-				usleep(QUANTUM2);
+				usleep(quantum[1]);
 				kill(pid2, SIGSTOP);
 			}
 			if (procs[2].semaphore > 0){
 				kill(pid3, SIGCONT);
-				usleep(QUANTUM3);
+				usleep(quantum[2]);
 				kill(pid3, SIGSTOP);
 			}
 			if (procs[3].semaphore > 0){
 				kill(pid4, SIGCONT);
-				usleep(QUANTUM4);
+				usleep(quantum[3]);
 				kill(pid4, SIGSTOP);
 			}
 			waitpid(pid1, &procs[0].semaphore, WNOHANG);
@@ -159,7 +169,7 @@ int main(int argc, char const *argv[])
 			for(int i  = 0; i < 4; i++){
 				queue1--;
 				if(procs[i].semaphore == 0){
-					procs[i].end = clock();
+					 clock_gettime(CLOCK_MONOTONIC, &end[i]);
 				}
 				else{
 					procs[i].queue = 2;
@@ -172,7 +182,7 @@ int main(int argc, char const *argv[])
 				if (procs[i].semaphore == 1){
 					kill(procs[i].pid, SIGCONT);
 					waitpid(procs[i].pid, &procs[i].semaphore, 0);
-					procs[i].end = clock();
+					clock_gettime(CLOCK_MONOTONIC, &end[i]);
 					queue2--;
 				}
 			}
@@ -180,8 +190,8 @@ int main(int argc, char const *argv[])
 	}
 
 	for(int i = 0; i < 4; i++){
-		double elapsed = (double)(procs[i].end - procs[i].start) / (double)(CLOCKS_PER_SEC);
-		printf("%.6f\n", elapsed);
+		double elapsed = (double)(end[i].tv_sec - start[i].tv_sec) + (double)(end[i].tv_nsec - start[i] .tv_nsec) / 1e9;
+		printf("%.20f\n", elapsed);
 	}
 
 	/************************************************************************************************
