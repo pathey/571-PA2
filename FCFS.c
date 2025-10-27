@@ -14,9 +14,9 @@
 *************************************************************************************************/
 
 #define WORKLOAD1 100000
-#define WORKLOAD2 50000
-#define WORKLOAD3 25000
-#define WORKLOAD4 10000
+#define WORKLOAD2 100000
+#define WORKLOAD3 100000
+#define WORKLOAD4 100000
 
 #define QUANTUM1 1000
 #define QUANTUM2 1000
@@ -110,34 +110,49 @@ int main(int argc, char const *argv[])
 	running2 = 1;
 	running3 = 1;
 	running4 = 1;
+	
+	struct Process {
+		pid_t pid;
+		int semaphore;
+	};
 
-	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
-	{
-		if (running1 > 0){
-			kill(pid1, SIGCONT);
-			usleep(QUANTUM1);
-			kill(pid1, SIGSTOP);
-		}
-		if (running2 > 0){
-			kill(pid2, SIGCONT);
-			usleep(QUANTUM2);
-			kill(pid2, SIGSTOP);
-		}
-		if (running3 > 0){
-			kill(pid3, SIGCONT);
-			usleep(QUANTUM3);
-			kill(pid3, SIGSTOP);
-		}
-		if (running4 > 0){
-			kill(pid4, SIGCONT);
-			usleep(QUANTUM4);
-			kill(pid4, SIGSTOP);
-		}
-		waitpid(pid1, &running1, WNOHANG);
-		waitpid(pid2, &running2, WNOHANG);
-		waitpid(pid3, &running3, WNOHANG);
-		waitpid(pid4, &running4, WNOHANG);
+	struct Process procs[4] = {
+		{pid1, 1},
+		{pid2, 1},
+		{pid3, 1},
+		{pid4, 1}
+	};
+
+	struct timespec start[4];
+	struct timespec end [4];
+	
+	struct timespec t0;
+	clock_gettime(CLOCK_MONOTONIC, &t0);
+	for(int i = 0; i < 4; i++){
+		start[i] = t0;
 	}
+
+	while (procs[0].semaphore > 0 || procs[1].semaphore > 0 || procs[2].semaphore > 0 || procs[3].semaphore > 0)
+	{
+		for(int i = 0; i <4; i++){
+			if(procs[i].semaphore > 0){
+				kill(procs[i].pid, SIGCONT);
+				waitpid(procs[i].pid, &procs[i].semaphore, 0);
+				clock_gettime(CLOCK_MONOTONIC, &end[i]);
+			}
+		}
+	}
+
+	double avg = 0;
+	double elapsed [4] = {0};
+	double sum = 0;
+	for(int i = 0; i < 4; i++){
+		elapsed[i] = (double)(end[i].tv_sec - start[i].tv_sec) + (double)(end[i].tv_nsec - start[i].tv_nsec) / 1e9;
+		sum += elapsed[i];
+	}
+
+	avg = sum /4.0;
+	printf("%.10f\n", sum);
 
 	/************************************************************************************************
 		- Scheduling code ends here

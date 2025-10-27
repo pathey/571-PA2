@@ -14,9 +14,9 @@
 *************************************************************************************************/
 
 #define WORKLOAD1 100000
-#define WORKLOAD2 50000
-#define WORKLOAD3 25000
-#define WORKLOAD4 10000
+#define WORKLOAD2 100000
+#define WORKLOAD3 100000
+#define WORKLOAD4 100000
 
 #define QUANTUM1 1000
 #define QUANTUM2 1000
@@ -105,7 +105,7 @@ int main(int argc, char const *argv[])
 		- For the assignment purposes, you have to replace this part with the other scheduling methods 
 		to be implemented.
 	************************************************************************************************/
-	int quantum [4] = {1000, 1000, 1000, 1000};
+	int quantum [4] = {300, 300, 300, 300};
 
 	if (argc >= 2) quantum[0] = atoi(argv[1]);
 	if (argc >= 3) quantum[1] = atoi(argv[2]);
@@ -142,57 +142,44 @@ int main(int argc, char const *argv[])
 	while (procs[0].semaphore > 0 || procs[1].semaphore > 0 || procs[2].semaphore > 0 || procs[3].semaphore > 0)
 	{
 		while (queue1 > 0){
-			if (procs[0].semaphore > 0){
-				kill(pid1, SIGCONT);
-				usleep(quantum[0]);
-				kill(pid1, SIGSTOP);	
-			}
-			if (procs[1].semaphore > 0){
-				kill(pid2, SIGCONT);
-				usleep(quantum[1]);
-				kill(pid2, SIGSTOP);
-			}
-			if (procs[2].semaphore > 0){
-				kill(pid3, SIGCONT);
-				usleep(quantum[2]);
-				kill(pid3, SIGSTOP);
-			}
-			if (procs[3].semaphore > 0){
-				kill(pid4, SIGCONT);
-				usleep(quantum[3]);
-				kill(pid4, SIGSTOP);
-			}
-			waitpid(pid1, &procs[0].semaphore, WNOHANG);
-			waitpid(pid2, &procs[1].semaphore, WNOHANG);
-			waitpid(pid3, &procs[2].semaphore, WNOHANG);
-			waitpid(pid4, &procs[3].semaphore, WNOHANG);
-			for(int i  = 0; i < 4; i++){
-				queue1--;
+			for(int i = 0; i < 4; i++){
+				kill(procs[i].pid, SIGCONT);
+				usleep(procs[i].quantum);
+				kill(procs[i].pid, SIGSTOP);
+				
+				int status = 0;
+				waitpid(procs[i].pid, &procs[i].semaphore, WNOHANG);
 				if(procs[i].semaphore == 0){
-					 clock_gettime(CLOCK_MONOTONIC, &end[i]);
+					clock_gettime(CLOCK_MONOTONIC, &end[i]);
+					queue1--;
 				}
 				else{
-					procs[i].queue = 2;
+					queue1--;
 					queue2++;
 				}
 			}
 		}
-		while(queue2 > 0){
+		while (queue2 > 0){
 			for(int i = 0; i < 4; i++){
-				if (procs[i].semaphore == 1){
+				if(procs[i].semaphore > 0){	
 					kill(procs[i].pid, SIGCONT);
 					waitpid(procs[i].pid, &procs[i].semaphore, 0);
 					clock_gettime(CLOCK_MONOTONIC, &end[i]);
 					queue2--;
 				}
 			}
-		}			
+		}
 	}
-
+	double avg = 0;
+	double elapsed [4] = {0};
+	double sum = 0;
 	for(int i = 0; i < 4; i++){
-		double elapsed = (double)(end[i].tv_sec - start[i].tv_sec) + (double)(end[i].tv_nsec - start[i] .tv_nsec) / 1e9;
-		printf("%.20f\n", elapsed);
+		elapsed[i] = (double)(end[i].tv_sec - start[i].tv_sec) + (double)(end[i].tv_nsec - start[i] .tv_nsec) / 1e9;
+		sum += elapsed[i];
 	}
+	
+	avg = sum/4.0;
+	printf("%.10f\n", sum);
 
 	/************************************************************************************************
 		- Scheduling code ends here
