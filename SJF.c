@@ -14,9 +14,9 @@
 *************************************************************************************************/
 
 #define WORKLOAD1 100000
-#define WORKLOAD2 50000
-#define WORKLOAD3 25000
-#define WORKLOAD4 10000
+#define WORKLOAD2 100000
+#define WORKLOAD3 100000
+#define WORKLOAD4 100000
 
 #define QUANTUM1 1000
 #define QUANTUM2 1000
@@ -141,12 +141,18 @@ int main(int argc, char const *argv[])
 		waitpid(procs[i].pid, &procs[i].semaphore, 0);
 		clock_gettime(CLOCK_MONOTONIC, &end[i]);
 	}
+	
+	double avg = 0;
+	double elapsed [4] = {0};
+	double sum = 0;
 
 	for(int i = 0; i < 4; i++){
-		double elapsed = (double)(end[i].tv_sec - start[i].tv_sec) + (double)(end[i].tv_nsec - start[i].tv_nsec) / 1e9;
-		printf("%.20f\n", elapsed);
+		elapsed[i] = (double)(end[i].tv_sec - start[i].tv_sec) + (double)(end[i].tv_nsec - start[i].tv_nsec) / 1e9;
+		sum += elapsed[i];
 	}
-
+	
+	avg = sum/4.0;
+	printf("%.10f\n", sum);
 
 	/************************************************************************************************
 		- Scheduling code ends here
