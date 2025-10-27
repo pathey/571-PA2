@@ -101,9 +101,6 @@ int main(int argc, char const *argv[])
 
 	/************************************************************************************************
 		- Scheduling code starts here
-		- Below is a sample schedule. (which scheduling algorithm is this?)
-		- For the assignment purposes, you have to replace this part with the other scheduling methods 
-		to be implemented.
 	************************************************************************************************/
 
 	running1 = 1;
@@ -111,32 +108,35 @@ int main(int argc, char const *argv[])
 	running3 = 1;
 	running4 = 1;
 
-	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
+	struct Process {
+		pid_t  pid;
+		int workload;
+		int semaphore;
+	};
+
+	struct Process procs[4] = {
+		{pid1, WORKLOAD1, 1},
+		{pid2, WORKLOAD2, 1},
+		{pid3, WORKLOAD3, 1},
+		{pid4, WORKLOAD4, 1}
+	};
+	
+	for(int i = 1; i < 4;  i++){
+		struct Process key = procs[i];
+		int j = i - 1;
+		while (j >= 0 && procs[j].workload > key.workload){
+			procs[j + 1] = procs[j];
+			j--;
+		}
+		procs[j + 1] = key;
+	}
+
+	int i = 0;
+	for(int i = 0; i < 4; i++)
 	{
-		if (running1 > 0){
-			kill(pid1, SIGCONT);
-			usleep(QUANTUM1);
-			kill(pid1, SIGSTOP);
-		}
-		if (running2 > 0){
-			kill(pid2, SIGCONT);
-			usleep(QUANTUM2);
-			kill(pid2, SIGSTOP);
-		}
-		if (running3 > 0){
-			kill(pid3, SIGCONT);
-			usleep(QUANTUM3);
-			kill(pid3, SIGSTOP);
-		}
-		if (running4 > 0){
-			kill(pid4, SIGCONT);
-			usleep(QUANTUM4);
-			kill(pid4, SIGSTOP);
-		}
-		waitpid(pid1, &running1, WNOHANG);
-		waitpid(pid2, &running2, WNOHANG);
-		waitpid(pid3, &running3, WNOHANG);
-		waitpid(pid4, &running4, WNOHANG);
+		kill(procs[i].pid, SIGCONT);
+		waitpid(procs[i].pid, &procs[i].semaphore, 0);
+		
 	}
 
 	/************************************************************************************************
