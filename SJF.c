@@ -103,23 +103,25 @@ int main(int argc, char const *argv[])
 		- Scheduling code starts here
 	************************************************************************************************/
 
-	running1 = 1;
-	running2 = 1;
-	running3 = 1;
-	running4 = 1;
 
 	struct Process {
 		pid_t  pid;
 		int workload;
 		int semaphore;
+		time_t start;
+		time_t end;
 	};
 
 	struct Process procs[4] = {
-		{pid1, WORKLOAD1, 1},
-		{pid2, WORKLOAD2, 1},
-		{pid3, WORKLOAD3, 1},
-		{pid4, WORKLOAD4, 1}
+		{pid1, WORKLOAD1, 1, 0, 0},
+		{pid2, WORKLOAD2, 1, 0, 0},
+		{pid3, WORKLOAD3, 1, 0, 0},
+		{pid4, WORKLOAD4, 1, 0, 0}
 	};
+	
+	for(int i = 0; i < 4; i++){
+		procs[i].start = clock();
+	}	
 	
 	for(int i = 1; i < 4;  i++){
 		struct Process key = procs[i];
@@ -131,13 +133,18 @@ int main(int argc, char const *argv[])
 		procs[j + 1] = key;
 	}
 
-	int i = 0;
 	for(int i = 0; i < 4; i++)
 	{
 		kill(procs[i].pid, SIGCONT);
 		waitpid(procs[i].pid, &procs[i].semaphore, 0);
-		
+		procs[i].end = clock();
 	}
+
+	for(int i = 0; i < 4; i++){
+		double elapsed = (double)(procs[i].end - procs[i].start) / (double)(CLOCKS_PER_SEC);
+		printf("%.6f\n", elapsed);
+	}
+
 
 	/************************************************************************************************
 		- Scheduling code ends here
