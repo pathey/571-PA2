@@ -1,9 +1,12 @@
 CC = gcc
-CFLAGS = -O2 -Wall -Wextra
+CFLAGS = -O2 -Wall -Wextra -Wno-unused-parameter
+CLAGS_FEEDBACK = -O2 -Wall -Wextra
 
 PROGS = sample_program SJF FCFS MLFQ
 
 all: $(PROGS)
+
+all_feedback: $(PROGS)
 
 %: %.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -20,7 +23,8 @@ run_SJF:	SJF
 
 run_FCFS:
 
-run_MLFQ:
+run_MLFQ:	MLFQ
+	./MLFQ
 
 clean:
 	rm -f $(PROGS) *.o
