@@ -18,7 +18,7 @@ run_sample_program:	sample_program
 	./sample_program
 
 run_SJF:	SJF
-	./SJF
+	./SJF 4
 
 run_FCFS:
 
